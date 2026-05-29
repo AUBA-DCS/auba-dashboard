@@ -426,6 +426,82 @@
 
         .text-muted-cell { color: var(--text-soft); font-size: 13px; }
 
+        .td-actions { white-space: nowrap; width: 1%; }
+        .btn-coverage {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 26px; height: 26px; border-radius: 6px;
+            background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25);
+            color: #818cf8; cursor: pointer; padding: 0;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            vertical-align: middle;
+        }
+        .btn-coverage:hover { background: rgba(99,102,241,0.22); border-color: #818cf8; transform: translateY(-1px); }
+
+        /* ---- COVERAGE MODAL ---- */
+        .cov-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+            z-index: 1000; display: none; backdrop-filter: blur(3px);
+        }
+        .cov-overlay.open { display: block; }
+        .cov-modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%) scale(0.96);
+            width: min(780px,95vw); max-height: 82vh;
+            background: var(--panel-bg); border-radius: 16px;
+            box-shadow: 0 28px 80px rgba(0,0,0,0.5);
+            z-index: 1001; display: none; flex-direction: column; overflow: hidden;
+            border: 1px solid var(--border-color);
+            opacity: 0; transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), opacity 0.18s ease;
+        }
+        .cov-modal.open { display: flex; transform: translate(-50%,-50%) scale(1); opacity: 1; }
+        .cov-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 20px 24px 16px; border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), transparent);
+            flex-shrink: 0;
+        }
+        .cov-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+        .cov-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cov-close {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+            font-size: 18px; padding: 6px 10px; border-radius: 8px; line-height: 1;
+            transition: background 0.15s, color 0.15s; flex-shrink: 0;
+        }
+        .cov-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .cov-toolbar {
+            padding: 12px 20px; border-bottom: 1px solid var(--border-color);
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-shrink: 0;
+        }
+        .cov-search {
+            flex: 1; min-width: 160px; padding: 8px 14px; border-radius: 8px;
+            border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);
+            color: var(--text); font-size: 13px; outline: none; font-family: inherit;
+        }
+        .cov-search:focus { border-color: #818cf8; }
+        .cov-filter {
+            padding: 8px 10px; border-radius: 8px;
+            border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);
+            color: var(--text); font-size: 12px; cursor: pointer; outline: none; font-family: inherit;
+        }
+        .cov-filter:focus { border-color: #818cf8; }
+        .cov-table-wrap { overflow-y: auto; flex: 1; }
+        .cov-table { width: 100%; border-collapse: collapse; }
+        .cov-table thead th {
+            padding: 10px 16px; text-align: left; font-size: 11px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 1;
+        }
+        .cov-table tbody tr { border-bottom: 1px solid var(--border-color); transition: background 0.12s; }
+        .cov-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+        .cov-table tbody td { padding: 10px 16px; font-size: 13px; color: var(--text); }
+        .cov-empty { text-align: center; color: var(--text-muted); padding: 36px !important; font-size: 14px; }
+        .cov-footer {
+            padding: 10px 20px; border-top: 1px solid var(--border-color);
+            font-size: 12px; color: var(--text-muted); text-align: right; flex-shrink: 0;
+        }
+
         /* ================================================================
            NO DATA / PLACEHOLDER
         ================================================================ */
@@ -643,6 +719,7 @@
                                         <th>Versión BC</th>
                                         <th>Versión GitHub</th>
                                         <th>Estado</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-auba"></tbody>
@@ -668,6 +745,7 @@
                                         <th>Extensión</th>
                                         <th>Publisher</th>
                                         <th>Versión BC</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-microsoft"></tbody>
@@ -693,6 +771,7 @@
                                         <th>Extensión</th>
                                         <th>Publisher</th>
                                         <th>Versión BC</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-otros"></tbody>
@@ -873,22 +952,35 @@ function buildRow(ext, isAuba) {
     const search = ((ext.nombre || '') + ' ' + (ext.publisher || '')).toLowerCase();
     const bcPill = `<span class="version-pill version-bc">${ext.versionBC || '—'}</span>`;
 
-    // Mostrar columnas GitHub si es Auba (siempre) o si cualquier extension tiene match en GitHub
+    // Boton descarga GitHub (solo si hay fichero)
+    const dlBtn = ext.fileGH
+        ? `<a href="https://github.com/AUBA-DCS/${ext.repoGH}/raw/${ext.branchGH}/${ext.fileGH}"
+              target="_blank" rel="noopener"
+              class="btn-gh-download" title="Descargar ${ext.fileGH}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+           </a> `
+        : '';
+
+    // Boton cobertura (todas las filas)
+    const nombreEsc = (ext.nombre || '').replace(/"/g, '&quot;');
+    const covBtn = `<button class="btn-coverage"
+        data-nombre="${nombreEsc}"
+        data-versiongh="${ext.versionGH || ''}"
+        data-repogh="${ext.repoGH || ''}"
+        data-filegh="${ext.fileGH || ''}"
+        data-branchgh="${ext.branchGH || ''}"
+        onclick="showCoverage(this)"
+        title="Ver en todos los clientes">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </button>`;
+
+    // Columnas GitHub: solo para grupo Auba
     let extraCols = '';
-    if (isAuba || ext.versionGH) {
+    if (isAuba) {
         const ghPill = ext.versionGH
             ? `<span class="version-pill version-gh">${ext.versionGH}</span>`
             : `<span class="text-muted-cell">—</span>`;
-
-        const dlBtn = ext.fileGH
-            ? `<a href="https://github.com/AUBA-DCS/${ext.repoGH}/raw/${ext.branchGH}/${ext.fileGH}"
-                  target="_blank" rel="noopener"
-                  class="btn-gh-download" title="Descargar ${ext.fileGH}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-               </a>`
-            : '';
-
-        extraCols = `<td>${ghPill}</td><td>${buildStatus(ext.estado)}</td><td>${dlBtn}</td>`;
+        extraCols = `<td>${ghPill}</td><td>${buildStatus(ext.estado)}</td>`;
     }
 
     return `<tr data-search="${search}">
@@ -896,6 +988,7 @@ function buildRow(ext, isAuba) {
         <td><span class="publisher-tag">${ext.publisher || '—'}</span></td>
         <td>${bcPill}</td>
         ${extraCols}
+        <td class="td-actions">${dlBtn}${covBtn}</td>
     </tr>`;
 }
 
@@ -1002,9 +1095,159 @@ function formatDate(iso) {
 
 // Arrancar
 init();
+
+/* ============================================================
+   COVERAGE MODAL
+   ============================================================ */
+function showCoverage(btn) {
+    const nombre    = btn.dataset.nombre;
+    const versionGH = btn.dataset.versiongh || '';
+    const repoGH    = btn.dataset.repogh    || '';
+    const fileGH    = btn.dataset.filegh    || '';
+    const branchGH  = btn.dataset.branchgh  || '';
+
+    document.getElementById('cov-title').textContent = nombre;
+
+    // Badge GitHub
+    const meta = document.getElementById('cov-meta');
+    if (versionGH) {
+        const dlUrl = `https://github.com/AUBA-DCS/${repoGH}/raw/${branchGH}/${fileGH}`;
+        meta.innerHTML = `<span class="version-pill version-gh">GitHub: ${versionGH}</span>
+            <a href="${dlUrl}" target="_blank" rel="noopener" class="btn-gh-download" title="Descargar ${fileGH}" style="margin-left:4px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>`;
+    } else {
+        meta.innerHTML = '<span style="color:var(--text-muted);font-size:12px">Sin versión en GitHub</span>';
+    }
+
+    // Recopilar datos de todos los clientes
+    const rows = [];
+    for (const [alias, clienteData] of Object.entries(window.SP_DATA.clientes)) {
+        for (const entorno of (clienteData.entornos || [])) {
+            const ext = (entorno.extensiones || []).find(e => e.nombre === nombre);
+            if (ext) {
+                rows.push({
+                    cliente : alias,
+                    entorno : entorno.nombre || '',
+                    tipo    : entorno.tipo   || '',
+                    version : ext.versionBC  || '—',
+                    estado  : ext.estado     || ''
+                });
+            }
+        }
+    }
+
+    window._covRows   = rows;
+    window._covGH     = versionGH;
+    window._covSearch = '';
+    document.getElementById('cov-search').value = '';
+
+    populateCovFilters(rows);
+    renderCovTable(rows);
+
+    document.getElementById('coverage-overlay').classList.add('open');
+    document.getElementById('coverage-modal').classList.add('open');
+    setTimeout(() => document.getElementById('cov-search').focus(), 150);
+}
+
+function closeCoverage() {
+    document.getElementById('coverage-overlay').classList.remove('open');
+    document.getElementById('coverage-modal').classList.remove('open');
+}
+
+function populateCovFilters(rows) {
+    const uniq = key => [...new Set(rows.map(r => r[key]).filter(Boolean))].sort();
+
+    ['cov-f-cliente','cov-f-entorno','cov-f-tipo','cov-f-estado'].forEach(id => {
+        const sel = document.getElementById(id);
+        const field = id.replace('cov-f-','');
+        const vals = uniq(field);
+        const labels = { cliente:'Todos los clientes', entorno:'Todos los entornos', tipo:'Todos los tipos', estado:'Todos los estados' };
+        sel.innerHTML = `<option value="">${labels[field]}</option>` +
+            vals.map(v => `<option value="${v}">${v}</option>`).join('');
+    });
+}
+
+function filterCoverage() {
+    const search  = document.getElementById('cov-search').value.toLowerCase();
+    const fCli    = document.getElementById('cov-f-cliente').value;
+    const fEnv    = document.getElementById('cov-f-entorno').value;
+    const fTipo   = document.getElementById('cov-f-tipo').value;
+    const fEst    = document.getElementById('cov-f-estado').value;
+
+    const filtered = (window._covRows || []).filter(r => {
+        if (fCli  && r.cliente !== fCli)  return false;
+        if (fEnv  && r.entorno !== fEnv)  return false;
+        if (fTipo && r.tipo    !== fTipo) return false;
+        if (fEst  && r.estado  !== fEst)  return false;
+        if (search && !`${r.cliente} ${r.entorno} ${r.tipo} ${r.version} ${r.estado}`.toLowerCase().includes(search)) return false;
+        return true;
+    });
+    renderCovTable(filtered);
+}
+
+function renderCovTable(rows) {
+    const tbody = document.getElementById('cov-tbody');
+    const footer = document.getElementById('cov-footer');
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="cov-empty">⚠️ No se encontraron coincidencias</td></tr>';
+        footer.textContent = 'Instalada en 0 entornos';
+        return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+        const statusHtml = r.estado ? buildStatus(r.estado) : '<span class="text-muted-cell">—</span>';
+        const tipoBadge  = r.tipo   ? `<span style="font-size:11px;color:var(--text-muted)">${r.tipo}</span>` : '';
+        return `<tr>
+            <td><strong>${r.cliente}</strong></td>
+            <td>${r.entorno} ${tipoBadge}</td>
+            <td><span class="version-pill version-bc">${r.version}</span></td>
+            <td>${statusHtml}</td>
+        </tr>`;
+    }).join('');
+
+    footer.textContent = `Instalada en ${rows.length} entorno${rows.length !== 1 ? 's' : ''}`;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCoverage(); });
 </script>
+
+<!-- COVERAGE MODAL -->
+<div id="coverage-overlay" class="cov-overlay" onclick="closeCoverage()"></div>
+<div id="coverage-modal" class="cov-modal" role="dialog" aria-modal="true">
+    <div class="cov-header">
+        <div>
+            <div class="cov-title" id="cov-title">—</div>
+            <div class="cov-meta" id="cov-meta"></div>
+        </div>
+        <button class="cov-close" onclick="closeCoverage()" title="Cerrar">✕</button>
+    </div>
+    <div class="cov-toolbar">
+        <input type="text" id="cov-search" class="cov-search"
+               placeholder="🔍 Buscar cliente, entorno, versión..."
+               oninput="filterCoverage()">
+        <select id="cov-f-cliente" class="cov-filter" onchange="filterCoverage()"><option>Todos los clientes</option></select>
+        <select id="cov-f-entorno" class="cov-filter" onchange="filterCoverage()"><option>Todos los entornos</option></select>
+        <select id="cov-f-tipo"    class="cov-filter" onchange="filterCoverage()"><option>Todos los tipos</option></select>
+        <select id="cov-f-estado"  class="cov-filter" onchange="filterCoverage()"><option>Todos los estados</option></select>
+    </div>
+    <div class="cov-table-wrap">
+        <table class="cov-table">
+            <thead><tr>
+                <th>Cliente</th>
+                <th>Entorno</th>
+                <th>Versión BC</th>
+                <th>Estado</th>
+            </tr></thead>
+            <tbody id="cov-tbody"></tbody>
+        </table>
+    </div>
+    <div class="cov-footer" id="cov-footer"></div>
+</div>
 </body>
 </html>
+
 
 
 
