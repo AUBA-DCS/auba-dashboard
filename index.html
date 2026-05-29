@@ -395,17 +395,12 @@
         }
         .version-bc { background: var(--auba-blue-light); border-color: #c3daf5; color: var(--auba-blue-dark); }
         .version-gh { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
-        .btn-gh-download {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 26px; height: 26px; border-radius: 6px;
-            background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);
-            color: #15803d; text-decoration: none;
+        .btn-coverage {
+            background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25);
+            color: #818cf8; cursor: pointer; padding: 0;
             transition: background 0.2s, border-color 0.2s, transform 0.15s;
         }
-        .btn-gh-download:hover {
-            background: rgba(34,197,94,0.2); border-color: #15803d;
-            transform: translateY(-1px);
-        }
+        .btn-coverage:hover { background: rgba(99,102,241,0.22); border-color: #818cf8; transform: translateY(-1px); }
 
         .status-badge {
             display: inline-flex; align-items: center; gap: 6px;
@@ -426,14 +421,26 @@
 
         .text-muted-cell { color: var(--text-soft); font-size: 13px; }
 
-        .td-actions { white-space: nowrap; width: 1%; }
-        .btn-coverage {
+        .td-actions {
+            white-space: nowrap; width: 1%;
+            display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+            padding-right: 12px;
+        }
+        .btn-gh-download, .btn-coverage {
             display: inline-flex; align-items: center; justify-content: center;
             width: 26px; height: 26px; border-radius: 6px;
+            flex-shrink: 0; vertical-align: middle;
+        }
+        .btn-gh-download {
+            background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);
+            color: #15803d; text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        }
+        .btn-gh-download:hover { background: rgba(34,197,94,0.2); border-color: #15803d; transform: translateY(-1px); }
+        .btn-coverage {
             background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25);
             color: #818cf8; cursor: pointer; padding: 0;
             transition: background 0.2s, border-color 0.2s, transform 0.15s;
-            vertical-align: middle;
         }
         .btn-coverage:hover { background: rgba(99,102,241,0.22); border-color: #818cf8; transform: translateY(-1px); }
 
@@ -447,10 +454,10 @@
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%,-50%) scale(0.96);
             width: min(780px,95vw); max-height: 82vh;
-            background: var(--panel-bg); border-radius: 16px;
-            box-shadow: 0 28px 80px rgba(0,0,0,0.5);
+            background: #1a2035;
+            box-shadow: 0 28px 80px rgba(0,0,0,0.7);
             z-index: 1001; display: none; flex-direction: column; overflow: hidden;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255,255,255,0.12);
             opacity: 0; transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), opacity 0.18s ease;
         }
         .cov-modal.open { display: flex; transform: translate(-50%,-50%) scale(1); opacity: 1; }
@@ -930,12 +937,12 @@ function renderGroups(exts) {
         }
     });
 
-    fillGroup('auba',      auba,      true);
-    fillGroup('microsoft', microsoft, false);
-    fillGroup('otros',     otros,     false);
+    fillGroup('auba',      auba,      true,  true);
+    fillGroup('microsoft', microsoft, false, false);
+    fillGroup('otros',     otros,     false, true);
 }
 
-function fillGroup(id, exts, isAuba) {
+function fillGroup(id, exts, isAuba, showGH) {
     document.getElementById('cnt-' + id).textContent = exts.length;
 
     if (exts.length === 0) {
@@ -945,10 +952,10 @@ function fillGroup(id, exts, isAuba) {
     document.getElementById('group-' + id).style.display = '';
 
     document.getElementById('tbody-' + id).innerHTML =
-        exts.map(ext => buildRow(ext, isAuba)).join('');
+        exts.map(ext => buildRow(ext, isAuba, showGH)).join('');
 }
 
-function buildRow(ext, isAuba) {
+function buildRow(ext, isAuba, showGH) {
     const search = ((ext.nombre || '') + ' ' + (ext.publisher || '')).toLowerCase();
     const bcPill = `<span class="version-pill version-bc">${ext.versionBC || '—'}</span>`;
 
@@ -958,10 +965,10 @@ function buildRow(ext, isAuba) {
               target="_blank" rel="noopener"
               class="btn-gh-download" title="Descargar ${ext.fileGH}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-           </a> `
+           </a>`
         : '';
 
-    // Boton cobertura (todas las filas)
+    // Boton cobertura (todas las filas) — siempre a la derecha
     const nombreEsc = (ext.nombre || '').replace(/"/g, '&quot;');
     const covBtn = `<button class="btn-coverage"
         data-nombre="${nombreEsc}"
@@ -974,9 +981,9 @@ function buildRow(ext, isAuba) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     </button>`;
 
-    // Columnas GitHub: solo para grupo Auba
+    // Columnas GitHub: Auba (siempre) y Otros (cuando showGH=true)
     let extraCols = '';
-    if (isAuba) {
+    if (showGH) {
         const ghPill = ext.versionGH
             ? `<span class="version-pill version-gh">${ext.versionGH}</span>`
             : `<span class="text-muted-cell">—</span>`;
