@@ -454,63 +454,63 @@
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%,-50%) scale(0.96);
             width: min(780px,95vw); max-height: 82vh;
-            background: #1a2035;
-            box-shadow: 0 28px 80px rgba(0,0,0,0.7);
+            background: #fefcf3;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            border-radius: 16px;
             z-index: 1001; display: none; flex-direction: column; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid #e5e0d0;
             opacity: 0; transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), opacity 0.18s ease;
         }
         .cov-modal.open { display: flex; transform: translate(-50%,-50%) scale(1); opacity: 1; }
         .cov-header {
             display: flex; align-items: flex-start; justify-content: space-between;
-            padding: 20px 24px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: linear-gradient(135deg, rgba(99,102,241,0.15), transparent);
+            padding: 20px 24px 16px; border-bottom: 1px solid #e5e0d0;
+            background: #fdf8ec;
             flex-shrink: 0;
         }
-        .cov-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 7px; }
+        .cov-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 7px; }
         .cov-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cov-close {
-            background: none; border: none; color: #94a3b8; cursor: pointer;
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
             font-size: 18px; padding: 6px 10px; border-radius: 8px; line-height: 1;
             transition: background 0.15s, color 0.15s; flex-shrink: 0;
         }
-        .cov-close:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+        .cov-close:hover { background: rgba(0,0,0,0.06); color: var(--text-main); }
         .cov-toolbar {
-            padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px; border-bottom: 1px solid #e5e0d0;
             display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-shrink: 0;
+            background: #fefcf3;
         }
         .cov-search {
             flex: 1; min-width: 160px; padding: 8px 14px; border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
-            color: #f1f5f9; font-size: 13px; outline: none; font-family: inherit;
+            border: 1px solid #d4cfc0; background: #fff;
+            color: var(--text-main); font-size: 13px; outline: none; font-family: inherit;
         }
-        .cov-search::placeholder { color: #64748b; }
-        .cov-search:focus { border-color: #818cf8; }
+        .cov-search:focus { border-color: var(--auba-blue); }
         .cov-filter {
             padding: 8px 10px; border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07);
-            color: #f1f5f9; font-size: 12px; cursor: pointer; outline: none; font-family: inherit;
+            border: 1px solid #d4cfc0; background: #fff;
+            color: var(--text-main); font-size: 12px; cursor: pointer; outline: none; font-family: inherit;
         }
-        .cov-filter option { background: #1e2a45; color: #f1f5f9; }
-        .cov-filter:focus { border-color: #818cf8; }
-        .cov-table-wrap { overflow-y: auto; flex: 1; }
+        .cov-filter:focus { border-color: var(--auba-blue); }
+        .cov-table-wrap { overflow-y: auto; flex: 1; background: #fefcf3; }
         .cov-table { width: 100%; border-collapse: collapse; }
         .cov-table thead th {
             padding: 10px 16px; text-align: left; font-size: 11px;
             font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-            color: #94a3b8; background: rgba(255,255,255,0.04);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted); background: #fdf8ec;
+            border-bottom: 1px solid #e5e0d0;
             position: sticky; top: 0; z-index: 1;
         }
-        .cov-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.12s; }
-        .cov-table tbody tr:hover { background: rgba(255,255,255,0.05); }
-        .cov-table tbody td { padding: 10px 16px; font-size: 13px; color: #e2e8f0; }
-        .cov-empty { text-align: center; color: #94a3b8; padding: 36px !important; font-size: 14px; }
+        .cov-table tbody tr { border-bottom: 1px solid #ede8d8; transition: background 0.12s; }
+        .cov-table tbody tr:hover { background: #fdf5e0; }
+        .cov-table tbody td { padding: 10px 16px; font-size: 13px; color: var(--text-main); }
+        .cov-empty { text-align: center; color: var(--text-muted); padding: 36px !important; font-size: 14px; }
         .cov-footer {
-            padding: 10px 20px; border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 12px; color: #64748b; text-align: right; flex-shrink: 0;
+            padding: 10px 20px; border-top: 1px solid #e5e0d0;
+            font-size: 12px; color: var(--text-muted); text-align: right; flex-shrink: 0;
+            background: #fdf8ec;
         }
-
 
         /* ================================================================
            NO DATA / PLACEHOLDER
